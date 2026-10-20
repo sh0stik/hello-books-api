@@ -2,32 +2,28 @@ from flask import Blueprint, Response, abort, make_response, request
 
 from ..db import db
 from ..models.book import Book
+from .route_utilities import validate_model
 
-books_bp = Blueprint("book", __name__, url_prefix="/books")
+bp = Blueprint("book_bp", __name__, url_prefix="/books")
 
-@books_bp.post("")
+@bp.post("")
 def create_book():
     request_body = request.get_json()
-    title = request_body["title"]
-    description = request_body["description"]
 
-    new_book = Book(
-        title=title,
-        description=description
-    )
+    try:
+        new_book = Book.from_dict(request_body)
+
+    except KeyError as err:
+        response = {"message": f"Invalid request: missing {err.args[0]}"} 
+        abort(make_response(response, 400))
 
     db.session.add(new_book)
     db.session.commit()
-    response = {
-        "id": new_book.id,
-        "title": new_book.title,
-        "description": new_book.description,
-    }
 
-    return response, 201
+    return new_book.to_dict(), 201
 
 
-@books_bp.get("")
+@bp.get("")
 def get_all_books():
     query = db.select(Book)
     
@@ -42,40 +38,20 @@ def get_all_books():
 
     books_response = []
     for book in books:
-        books_response.append({
-            "id": book.id,
-            "title": book.title,
-            "description": book.description
-        })
+        books_response.append(book.to_dict())
     return books_response 
 
-@books_bp.get("/<book_id>")
+@bp.get("/<book_id>")
 def get_one_book(book_id):
-    book = validate_book(book_id)
+    book = validate_model(Book, book_id)
 
-    return {
-        "id": book.id,
-        "title": book.title,
-        "description": book.description,
-    }
+    return book.to_dict()
 
-def validate_book(book_id):
-    try:
-            book_id = int(book_id)
-    except ValueError:
-        response = {"message": f"book {book_id} invalid"}
-        abort(make_response(response, 400))
-    
-    query = db.select(Book).where(Book.id == book_id)
-    book = db.session.scalar(query)
-    
-    if book is None:
-        abort(make_response({"message": f"book {book_id} not found"}, 404))
-    return book
 
-@books_bp.put("/<book_id>")
+
+@bp.put("/<book_id>")
 def update_book(book_id):
-    book = validate_book(book_id)
+    book = validate_model(Book, book_id)
     request_body = request.get_json()
 
     book.title = request_body["title"]
@@ -85,9 +61,9 @@ def update_book(book_id):
 
     return Response(status=204, mimetype="application/json")
 
-@books_bp.delete("/<book_id>")
+@bp.delete("/<book_id>")
 def delete_book(book_id):
-    book = validate_book(book_id)
+    book = validate_model(Book, book_id)
     db.session.delete(book)
     db.session.commit()
 

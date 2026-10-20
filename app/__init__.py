@@ -2,7 +2,7 @@ from flask import Flask
 
 from .db import db, migrate
 from .models import book
-from .routes.book_routes import books_bp
+from .routes.book_routes import bp as books_bp
 import os
 
 
