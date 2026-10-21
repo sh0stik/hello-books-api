@@ -1,7 +1,7 @@
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app import db
+from ..db import db
 
 class Author(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

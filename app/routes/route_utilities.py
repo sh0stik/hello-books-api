@@ -32,7 +32,7 @@ def get_models_with_filters_with_response(cls, filters=None):
     query = db.select(cls)
 
     if filters:
-          for attribute, value in filters.itens():
+          for attribute, value in filters.items():
                if hasattr(cls, attribute):
                     query = query.where(getattr(cls, attribute).ilike(f"%{value}%"))
 
